@@ -1,0 +1,86 @@
+name: Build LocalSRT
+
+on:
+  push:
+    branches:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Build Linux binary
+        run: |
+          pyinstaller localsrt_v3.1.py --onefile \
+            --add-data "bin/linux:bin" \
+            --name localSRT-linux
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: dist/
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Build Windows exe
+        run: |
+          pyinstaller localsrt_v3.1.py --onefile `
+            --add-data "bin/windows;bin" `
+            --name localSRT-windows
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: dist/
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Build macOS app
+        run: |
+          pyinstaller localsrt_v3.1.py --onefile \
+            --add-data "bin/macos:bin" \
+            --name localSRT-macos
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: dist/
