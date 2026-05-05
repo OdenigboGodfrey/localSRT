@@ -37,6 +37,7 @@ def check_ffmpeg():
 # Step 1: Extract audio
 # ---------------------------
 def extract_audio(input_video, output_audio):
+    print(f"Extracting from {input_video} to {output_audio}")
     cmd = [
         FFMPEG,
         "-y",
@@ -52,6 +53,7 @@ def extract_audio(input_video, output_audio):
 # Step 2: Get audio duration
 # ---------------------------
 def get_audio_duration(audio_file):
+    print(f"Fetching audio duration from {audio_file}")
     cmd = [
         FFPROBE,
         "-i", audio_file,
@@ -78,6 +80,7 @@ def format_time(seconds):
 # Step 4: Transcribe in chunks
 # ---------------------------
 def transcribe_chunks(audio_file, whisper_model, chunk_length):
+    print(f"Transcribing {audio_file} in chunks of {chunk_length} seconds")
     # get audio duration to use for total number of chunks
     duration = get_audio_duration(audio_file)
     # get total number of chunks by dividing audio duration by chunk length e.g 1m total audio/30s chunk = 2 chunks
