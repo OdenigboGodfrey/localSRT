@@ -2,8 +2,8 @@ name: Build LocalSRT
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - "v*"
   workflow_dispatch:
 
 jobs:
@@ -26,12 +26,12 @@ jobs:
           pyinstaller localsrt_v3.1.py --onefile \
             --add-data "bin/linux:bin" \
             --name localSRT-linux
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload localSRT Linux to Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: linux-build
-          path: dist/
+          files: dist/localSRT-linux
+        env:
+          GITHUB_TOKEN: ${{ secrets.GTH_TOKEN }}
 
   build-windows:
     runs-on: windows-latest
@@ -53,11 +53,12 @@ jobs:
             --add-data "bin/windows;bin" `
             --name localSRT-windows
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Windows to Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: windows-build
-          path: dist/
+          files: dist/localSRT-windows.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GTH_TOKEN }}
 
   build-macos:
     runs-on: macos-latest
@@ -79,8 +80,10 @@ jobs:
             --add-data "bin/macos:bin" \
             --name localSRT-macos
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload macOS to Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: macos-build
-          path: dist/
+          files: dist/localSRT-macos
+        env:
+          GITHUB_TOKEN: ${{ secrets.GTH_TOKEN }}
+    
