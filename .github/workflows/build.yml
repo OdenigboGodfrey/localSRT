@@ -2,7 +2,7 @@ name: Build LocalSRT
 
 on:
   push:
-    branches:
+    tags:
       - "v*"
   workflow_dispatch:
 
