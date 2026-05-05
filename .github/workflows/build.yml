@@ -2,8 +2,8 @@ name: Build LocalSRT
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - master
   workflow_dispatch:
 
 jobs:
@@ -53,7 +53,7 @@ jobs:
             --add-data "bin/windows;bin" `
             --name localSRT-windows
 
-      - name: Upload Windows to Release
+      - name: Upload localSRT Windows to Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/localSRT-windows.exe
@@ -80,7 +80,7 @@ jobs:
             --add-data "bin/macos:bin" \
             --name localSRT-macos
 
-      - name: Upload macOS to Release
+      - name: Upload localSRT macOS to Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/localSRT-macos
