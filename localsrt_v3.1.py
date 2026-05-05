@@ -149,7 +149,7 @@ def process_srt(input_file_path):
         global WHISPER_MODEL
         if not WHISPER_MODEL:
             print("Loading Whisper model...")
-            WHISPER_MODEL = WhisperModel("base")  # or "tiny", "base", "medium", "large"
+            WHISPER_MODEL = WhisperModel("base", device="cpu", compute_type="int8")  # or "tiny", "base", "medium", "large"
         whisper_model = WHISPER_MODEL
 
         print("Transcribing in chunks...")

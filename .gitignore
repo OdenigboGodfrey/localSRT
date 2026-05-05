@@ -1,5 +1,4 @@
 build/
 dist/
-localSRT.spec
-localsrt_v3.1.spec
+**.spec
 venv/
