@@ -169,7 +169,7 @@ def process_srt(input_file_path):
             global WHISPER_MODEL
             if not WHISPER_MODEL:
                 print("Loading Whisper model...")
-                WhisperModel(
+                WHISPER_MODEL = WhisperModel(
                     MODEL_SIZE,
                     device=DEVICE,
                     compute_type=COMPUTE_TYPE
