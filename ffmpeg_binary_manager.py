@@ -6,9 +6,9 @@ import shutil
 def get_ffmpeg_binary(name="ffmpeg"):
     base_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
 
-    # system_ffmpeg = shutil.which(name)
-    # if system_ffmpeg:
-    #     return system_ffmpeg
+    system_ffmpeg = shutil.which(name)
+    if system_ffmpeg:
+        return system_ffmpeg
 
     os_platform = platform.system()
     print(f"Detected OS {os_platform}")

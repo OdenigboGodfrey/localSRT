@@ -1,2 +1,5 @@
 pyinstaller
 faster-whisper
+sounddevice
+numpy
+argostranslate

@@ -20,6 +20,9 @@ SAMPLE_RATE = 16000
 OVERLAP = 5
 WHISPER_MODEL = False
 ALLOWED_EXTENSIONS = ['.mp4', '.mkv', '.avi', '.mov']
+MODEL_SIZE = "base"  # or "tiny", "base", "medium", "large"
+DEVICE = "cpu"
+COMPUTE_TYPE = "int8"
 
 
 def check_ffmpeg():
@@ -62,6 +65,8 @@ def get_audio_duration(audio_file):
         "-of", "csv=p=0"
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr)
     return float(result.stdout.strip())
 
 
@@ -87,6 +92,8 @@ def transcribe_chunks(audio_file, whisper_model, chunk_length):
     step = chunk_length - OVERLAP
     num_chunks = math.ceil(duration / step)
 
+    detected_language = ""
+
     # force recreation of chunks directory
     if os.path.exists(CHUNKS_DIR):
         shutil.rmtree(CHUNKS_DIR)
@@ -96,7 +103,11 @@ def transcribe_chunks(audio_file, whisper_model, chunk_length):
 
     for i in range(num_chunks):
         start_time = i * (chunk_length - OVERLAP)
-        chunk_file = CHUNKS_DIR + f"chunk_{i}.wav"
+        # chunk_file = CHUNKS_DIR + f"chunk_{i}.wav"
+        chunk_file = os.path.join(
+            CHUNKS_DIR,
+            f"chunk_{i}.wav"
+        )
 
         # Extract chunk
         cmd = [
@@ -114,6 +125,11 @@ def transcribe_chunks(audio_file, whisper_model, chunk_length):
         # Transcribe chunk
         segments, info = whisper_model.transcribe(chunk_file)
 
+        # print("Detected language:", info.language)
+        # print("Probability:", info.language_probability)
+        if info.language_probability > 0.8:
+            detected_language = info.language
+
         # Adjust timestamps
         for seg in segments:
             # pprint.pprint(seg)
@@ -125,7 +141,7 @@ def transcribe_chunks(audio_file, whisper_model, chunk_length):
 
         os.remove(chunk_file)  # cleanup
 
-    return all_segments
+    return {'all_segments': all_segments, 'detected_language': detected_language}
 
 
 # ---------------------------
@@ -138,29 +154,46 @@ def write_srt(segments, output_file):
             f.write(f"{format_time(seg['start'])} --> {format_time(seg['end'])}\n")
             f.write(f"{seg['text']}\n\n")
 
+# ---------------------------
+# Process SRT
+# ---------------------------
 def process_srt(input_file_path):
-        filename = os.path.splitext(os.path.basename(input_file_path))[0]
-        input_directory = os.path.dirname(input_file_path)
-        output_file_name = os.path.join(input_directory, filename + ".srt")
-        
-        print("Extracting audio...")
-        extract_audio(input_file_path, AUDIO_FILE)
+        try:
+            filename = os.path.splitext(os.path.basename(input_file_path))[0]
+            input_directory = os.path.dirname(input_file_path)
+            output_file_name = os.path.join(input_directory, filename + ".srt")
+            
+            print("Extracting audio...")
+            extract_audio(input_file_path, AUDIO_FILE)
 
-        global WHISPER_MODEL
-        if not WHISPER_MODEL:
-            print("Loading Whisper model...")
-            WHISPER_MODEL = WhisperModel("base", device="cpu", compute_type="int8")  # or "tiny", "base", "medium", "large"
-        whisper_model = WHISPER_MODEL
+            global WHISPER_MODEL
+            if not WHISPER_MODEL:
+                print("Loading Whisper model...")
+                WhisperModel(
+                    MODEL_SIZE,
+                    device=DEVICE,
+                    compute_type=COMPUTE_TYPE
+                )
+            whisper_model = WHISPER_MODEL
 
-        print("Transcribing in chunks...")
-        segments = transcribe_chunks(AUDIO_FILE, whisper_model, CHUNK_LENGTH)
+            print("Transcribing in chunks...")
+            transcribe_result = transcribe_chunks(AUDIO_FILE, whisper_model, CHUNK_LENGTH)
 
-        print("Writing subtitles...")
-        write_srt(segments, output_file_name)
+            # translate if destination language is different from source language (video)
 
-        print("Done! Saved to", output_file_name)
+            print("Writing subtitles...")
+            write_srt(transcribe_result["all_segments"], output_file_name)
+
+            print("Done! Saved to", output_file_name)
+        except Exception as e:
+            print(f"Error on process srt:{ str(e)}")
         # remove generated audio file 
-        os.remove(AUDIO_FILE)
+        if os.path.exists(AUDIO_FILE):
+            os.remove(AUDIO_FILE)
+        # remove generated chunks directory
+        if os.path.exists(CHUNKS_DIR):
+            shutil.rmtree(CHUNKS_DIR, ignore_errors=True)
+        
 
 # ---------------------------
 # MAIN
@@ -168,7 +201,9 @@ def process_srt(input_file_path):
 def main():
     check_ffmpeg() 
     while True:
-        prompt = input("Enter a video or directory path to import or /bye to exit: \n")
+        prompt = ""
+        if prompt == "" or prompt == None:
+            prompt = input("Enter a video or directory path to import or /bye to exit: \n")
         if prompt == "/bye":
             break
         if prompt == "":
