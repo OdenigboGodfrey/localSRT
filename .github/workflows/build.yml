@@ -36,24 +36,24 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-          - name: Build Linux binary
-          env:
-            CT2_FORCE_CPU: "1"
-          run: |
-            pyinstaller main.py \
-              --onefile \
-              --clean \
-              --noconfirm \
-              --name localSRT-linux \
-              --add-data "bin/linux/ffmpeg:bin" \
-              --add-data "bin/linux/ffprobe:bin" \
-              --add-data "ui:ui" \
-              --exclude-module torch \
-              --exclude-module torchvision \
-              --exclude-module torchaudio \
-              --exclude-module nvidia \
-              --exclude-module triton \
-              --exclude-module tensorflow
+      - name: Build Linux binary
+        env:
+          CT2_FORCE_CPU: "1"
+        run: |
+          pyinstaller main.py \
+            --onefile \
+            --clean \
+            --noconfirm \
+            --name localSRT-linux \
+            --add-data "bin/linux/ffmpeg:bin" \
+            --add-data "bin/linux/ffprobe:bin" \
+            --add-data "ui:ui" \
+            --exclude-module torch \
+            --exclude-module torchvision \
+            --exclude-module torchaudio \
+            --exclude-module nvidia \
+            --exclude-module triton \
+            --exclude-module tensorflow
       - name: Verify build output
         run: |
           ls -lah dist/
