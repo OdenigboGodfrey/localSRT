@@ -109,6 +109,9 @@
             background: var(--accent);
             transition: width 0.2s;
         }
+        .form-input-detail {
+            font-size: 12px;
+        }
     </style>
 </head>
 
@@ -123,10 +126,10 @@
         <button onclick="selectFolder()">Select Folder</button>
         <p id="filePath">No file selected</p>
 
-        <p>Video Chunk Length in seconds <span style="font-size: 12px;">(This is how many seconds to transcribe in a batch. Longer lengths will take more memory)</span></p>
+        <p>Video Chunk Length in seconds <span class="form-input-detail">(This is how many seconds to transcribe in a batch. Longer lengths will take more memory)</span></p>
         <input type="number" id="chunk" value="30">
 
-        <label>Model</label>
+        <label>Model <span class="form-input-detail">(Changing this would trigger a model download which can take some time)</span></label>
         <select id="model">
             <option value="tiny">tiny</option>
             <option value="base" selected>base</option>
