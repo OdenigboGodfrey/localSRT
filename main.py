@@ -14,6 +14,8 @@ import threading
 from fastapi import WebSocket
 from contextlib import asynccontextmanager
 
+from shared import resource_path
+
 port = 3555
 event_loop = None
 
@@ -45,9 +47,12 @@ progress_store = {
 # -----------------------------
 @app.get("/")
 def home():
-    with open("ui/index.html", "r", encoding="utf-8") as f:
-        html = f.read()
-    return HTMLResponse(content=html)
+    with open(
+        resource_path("ui/index.html"),
+        "r",
+        encoding="utf-8"
+    ) as f:
+        return HTMLResponse(f.read())
 
 
 # -----------------------------
