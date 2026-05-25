@@ -2,7 +2,7 @@ import asyncio
 import os
 import webbrowser
 import threading
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import uvicorn
@@ -35,7 +35,9 @@ clients_lock = asyncio.Lock()
 progress_store = {
     "current": 0,
     "total": 1,
-    "status": "idle"
+    "status": "idle",
+    "total_files": 0,
+    "current_file": 0
 }
 
 # -----------------------------
@@ -96,6 +98,8 @@ class JobRequest(BaseModel):
 
 @app.post("/run")
 def run_job(req: JobRequest):
+    if progress_store["status"] != "idle":
+        return HTTPException(status_code=400, detail="Job already running")
 
     def worker():
         process_srt_job_with_progress(

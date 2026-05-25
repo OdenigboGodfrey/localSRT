@@ -119,9 +119,11 @@
         <h2>LocalSRT</h2>
 
         <button onclick="selectFile()">Select File</button>
+        <p style="text-align: center">Or</p>
+        <button onclick="selectFolder()">Select Folder</button>
         <p id="filePath">No file selected</p>
 
-        <label>Video Chunk Length (This is how many seconds to transcribe in a batch. Longer lengths will take more memory)</label>
+        <p>Video Chunk Length in seconds <span style="font-size: 12px;">(This is how many seconds to transcribe in a batch. Longer lengths will take more memory)</span></p>
         <input type="number" id="chunk" value="30">
 
         <label>Model</label>
@@ -151,6 +153,18 @@
 
         async function selectFile() {
             const res = await fetch("/select-file")
+            const data = await res.json()
+
+            if (!data.path) return
+
+            selectedPath = data.path
+
+            document.getElementById("filePath").innerText =
+                "Selected: " + selectedPath
+        }
+
+        async function selectFolder() {
+            const res = await fetch("/select-folder")
             const data = await res.json()
 
             if (!data.path) return
@@ -203,8 +217,14 @@
                 percent + "%";
             
             if (percent == 100) {
-                document.getElementById("status").innerText =
-                "Completed"
+                const totalFiles = data.total_files
+                const currentFile = data.current_file
+                let message = "Completed. SRT file saved to the same directory as the video."
+                if (currentFile <= totalFiles) {
+                    message = `${(currentFile + 1)}/${totalFiles} files processed. SRT file saved to the same directory as the video.`
+                }
+                document.getElementById("status").innerText = message
+                
             }
             else {
             document.getElementById("status").innerText = data.status;
