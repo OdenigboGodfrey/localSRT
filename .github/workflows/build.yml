@@ -30,7 +30,7 @@ jobs:
         run: |
           pyinstaller main.py --onefile \
             --add-data "bin/linux:bin" \
-            --add-data "ui/index.html:ui" \
+            --add-data "ui:ui" \
             --name localSRT-linux
       - name: Upload localSRT Linux to Release
         uses: softprops/action-gh-release@v2
@@ -60,7 +60,7 @@ jobs:
           pyinstaller main.py --onefile `
             --add-data "bin/windows/ffmpeg.exe;bin" `
             --add-data "bin/windows/ffprobe.exe;bin" `
-            --add-data "ui/index.html;ui" `
+            --add-data "ui;ui" `
             --name localSRT-windows
 
       - name: Upload localSRT Windows to Release
@@ -90,7 +90,7 @@ jobs:
         run: |
           pyinstaller main.py --onefile \
             --add-data "bin/macos:bin" \
-            --add-data "ui/index.html:ui" \
+            --add-data "ui:ui" \
             --name localSRT-macos
 
       - name: Upload localSRT macOS to Release
