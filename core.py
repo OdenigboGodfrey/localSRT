@@ -157,7 +157,7 @@ def process_srt_job_with_progress(selected_path, chunk_length, model_size, progr
             )
     else:
         progress["total_files"] = 1
-        progress["current_file"] = 1
+        progress["current_file"] = 0
         process_srt_job(
             selected_path,
             chunk_length,
