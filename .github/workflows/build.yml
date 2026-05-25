@@ -41,7 +41,7 @@ jobs:
           pyinstaller main.py --onefile \
             --add-data "bin/linux/ffmpeg:bin" \
             --add-data "bin/linux/ffprobe:bin" \
-            --add-data "ui:ui"
+            --add-data "ui:ui" \
             --name localSRT-linux
       - name: Verify build output
         run: |
