@@ -2,8 +2,10 @@ name: Build LocalSRT
 
 on:
   push:
-    tags:
-      - "v*"
+    # tags:
+    #   - "v*"
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
