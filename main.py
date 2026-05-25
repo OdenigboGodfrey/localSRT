@@ -1,5 +1,7 @@
 import asyncio
+import time
 import os
+import signal
 import webbrowser
 import threading
 from fastapi import FastAPI, HTTPException
@@ -8,9 +10,7 @@ from pydantic import BaseModel
 import uvicorn
 import tkinter as tk
 from tkinter import filedialog
-from core import process_srt_job
 from core import process_srt_job_with_progress
-import threading
 from fastapi import WebSocket
 from contextlib import asynccontextmanager
 
@@ -19,10 +19,31 @@ from shared import resource_path
 port = 3555
 event_loop = None
 
+# -----
+# Monitor web socket connections and auto kill the app when there's no active connection
+# -----
+last_seen = time.time()
+
+
+def monitor():
+    while True:
+        time.sleep(5)
+        if active_connections == 0 and (time.time() - last_seen >= 5):
+            print("No browser for 5s. Shutting down.")
+            os.kill(os.getpid(), signal.SIGTERM)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global event_loop
     event_loop = asyncio.get_running_loop()
+
+    monitor_thread = threading.Thread(
+        target=monitor,
+        daemon=True
+    )
+    monitor_thread.start()
+
     print("Server starting...")
 
     yield
@@ -130,9 +151,14 @@ def get_progress():
 # -----------------------------
 # Websocket
 # -----------------------------
+active_connections = 0
 @app.websocket("/ws")
 async def ws_endpoint(websocket: WebSocket):
+    global active_connections, last_seen
+
     await websocket.accept()
+    active_connections += 1
+    last_seen = time.time()
 
     async with clients_lock:
         clients.add(websocket)
@@ -141,11 +167,16 @@ async def ws_endpoint(websocket: WebSocket):
         while True:
             # keep connection alive
             await websocket.receive_text()
-    except:
+            last_seen = time.time()
+    except Exception as e:
+        print(f"[WS exception caught] {e}")
         pass
     finally:
         async with clients_lock:
             clients.remove(websocket)
+            active_connections -= 1
+            last_seen = time.time()
+
 
 
 
