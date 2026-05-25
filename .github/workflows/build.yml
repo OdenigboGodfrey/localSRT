@@ -54,11 +54,11 @@ jobs:
             --exclude-module nvidia \
             --exclude-module triton \
             --exclude-module tensorflow
-      - name: Verify build output
+      - name: Set executable permission
         run: |
+          chmod 755 dist/localSRT-linux
           ls -lah dist/
           file dist/localSRT-linux
-          chmod +x dist/localSRT-linux
       - name: Upload localSRT Linux to Release
         uses: softprops/action-gh-release@v2
         with:
