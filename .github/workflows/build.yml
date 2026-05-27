@@ -103,6 +103,7 @@ jobs:
 
   build-macos:
     runs-on: macos-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -116,6 +117,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install pyinstaller
 
       - name: Build macOS app
         run: |
@@ -123,18 +125,20 @@ jobs:
             --add-data "bin/macos:bin" \
             --add-data "ui:ui" \
             --name localSRT-macos
+
       - name: Set executable permission
         run: |
           chmod 755 dist/localSRT-macos
           ls -lah dist/
           file dist/localSRT-macos
-      - name: Package macos binary
+
+      - name: Package macOS binary
         run: |
           tar -czf localSRT-macos-x64.tar.gz -C dist localSRT-macos
+
       - name: Upload localSRT macOS to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/localSRT-macos-x64.tar.gz
+          files: localSRT-macos-x64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GTH_TOKEN }}
-    
