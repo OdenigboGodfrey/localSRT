@@ -125,7 +125,7 @@ class JobRequest(BaseModel):
 @app.post("/run")
 def run_job(req: JobRequest):
     if progress_store["status"] != "idle":
-        return HTTPException(status_code=400, detail="Job already running")
+        raise HTTPException(status_code=400, detail="Job already running")
 
     def worker():
         process_srt_job_with_progress(
@@ -169,7 +169,7 @@ async def ws_endpoint(websocket: WebSocket):
             await websocket.receive_text()
             last_seen = time.time()
     except Exception as e:
-        print(f"[WS exception caught] {e}")
+        # print(f"[WS exception caught] {e}")
         pass
     finally:
         async with clients_lock:

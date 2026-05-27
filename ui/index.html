@@ -61,7 +61,7 @@
 
         h2 {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         button,
@@ -112,12 +112,13 @@
         .form-input-detail {
             font-size: 12px;
         }
-        .disclaimer {
+        #disclaimer {
             background-color: #fffbeb;
             border-left: 4px solid #f59e0b;
             padding: 16px;
             border-radius: 4px;
             margin-top: 24px;
+            display: none;
         }
         .disclaimer-title {
             font-weight: 600;
@@ -155,7 +156,7 @@
             <option value="medium">medium</option>
             <option value="large">large</option>
         </select>
-        <div class="disclaimer">
+        <div id="disclaimer">
             <div class="disclaimer-title">⚠️ Important Disclaimer</div>
             <p class="disclaimer-text">
                 Because this application relies on artificial intelligence to generate the subtitle(s), errors, omissions, or inaccuracies can occasionally occur. If you need more accuracy, you can try to use a different model (medium or large, transcription would also take more time).</p>
@@ -214,6 +215,7 @@
 
             document.getElementById("status").innerText =
                 "Starting..."
+            document.getElementById("disclaimer").style.display = "block"
 
             const res = await fetch(`${API_URL}/run`, {
                 method: "POST",
@@ -237,6 +239,11 @@
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data)
 
+            const totalFiles = data.total_files
+            const currentFile = data.current_file
+            
+            console.log('ws data', data)
+
             const percent =
                 (data.current / data.total) * 100
 
@@ -244,8 +251,7 @@
                 percent + "%";
             
             if (percent == 100) {
-                const totalFiles = data.total_files
-                const currentFile = data.current_file
+                console.log(`totalFiles ${totalFiles} --- currentFile ${currentFile}`)
                 let message = "Completed. SRT file saved to the same directory as the video."
                 if (currentFile <= totalFiles) {
                     message = `${(currentFile + 1)}/${totalFiles} files processed. SRT file saved to the same directory as the video.`
@@ -255,6 +261,12 @@
             }
             else {
             document.getElementById("status").innerText = data.status;
+            }
+
+            if (currentFile >= totalFiles) {
+                setTimeout(()=> {
+                    document.getElementById("disclaimer").style.display = "none"
+                }, 2000);
             }
         }
 

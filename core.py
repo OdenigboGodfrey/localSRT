@@ -167,6 +167,8 @@ def process_srt_job_with_progress(selected_path, chunk_length, model_size, progr
             clients_lock,
             clients
         )
+        # manually set the number to 1
+        progress["current_file"] = 1
 
     progress["current"] = 0
     progress["total"] = 0
