@@ -112,6 +112,25 @@
         .form-input-detail {
             font-size: 12px;
         }
+        .disclaimer {
+            background-color: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            border-radius: 4px;
+            margin-top: 24px;
+        }
+        .disclaimer-title {
+            font-weight: 600;
+            color: #b45309;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        .disclaimer-text {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #78350f;
+        }
     </style>
 </head>
 
@@ -136,6 +155,11 @@
             <option value="medium">medium</option>
             <option value="large">large</option>
         </select>
+        <div class="disclaimer">
+            <div class="disclaimer-title">⚠️ Important Disclaimer</div>
+            <p class="disclaimer-text">
+                Because this application relies on artificial intelligence to generate the subtitle(s), errors, omissions, or inaccuracies can occasionally occur. If you need more accuracy, you can try to use a different model (medium or large, transcription would also take more time).</p>
+        </div>
 
         <button onclick="run()">Start</button>
 
