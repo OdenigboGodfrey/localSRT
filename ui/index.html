@@ -241,8 +241,6 @@
 
             const totalFiles = data.total_files
             const currentFile = data.current_file
-            
-            console.log('ws data', data)
 
             const percent =
                 (data.current / data.total) * 100
@@ -251,7 +249,6 @@
                 percent + "%";
             
             if (percent == 100) {
-                console.log(`totalFiles ${totalFiles} --- currentFile ${currentFile}`)
                 let message = "Completed. SRT file saved to the same directory as the video."
                 if (currentFile <= totalFiles) {
                     message = `${(currentFile + 1)}/${totalFiles} files processed. SRT file saved to the same directory as the video.`
