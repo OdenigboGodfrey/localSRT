@@ -101,7 +101,49 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GTH_TOKEN }}
 
-  build-macos:
+  build-macos-x64:
+    runs-on: macos-13
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Build Intel macOS binary
+        run: |
+          pyinstaller main.py --onefile \
+            --add-data "bin/macos:bin" \
+            --add-data "ui:ui" \
+            --name localSRT-macos-x64
+
+      - name: Verify binary
+        run: |
+          chmod 755 dist/localSRT-macos-x64
+          file dist/localSRT-macos-x64
+          ls -lah dist/
+
+      - name: Package binary
+        run: |
+          tar -czf localSRT-macos-x64.tar.gz -C dist localSRT-macos-x64
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: localSRT-macos-x64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GTH_TOKEN }}
+
+
+  build-macos-arm64:
     runs-on: macos-latest
 
     steps:
@@ -117,28 +159,27 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install pyinstaller
 
-      - name: Build macOS app
+      - name: Build Apple Silicon macOS binary
         run: |
           pyinstaller main.py --onefile \
             --add-data "bin/macos:bin" \
             --add-data "ui:ui" \
-            --name localSRT-macos
+            --name localSRT-macos-arm64
 
-      - name: Set executable permission
+      - name: Verify binary
         run: |
-          chmod 755 dist/localSRT-macos
+          chmod 755 dist/localSRT-macos-arm64
+          file dist/localSRT-macos-arm64
           ls -lah dist/
-          file dist/localSRT-macos
 
-      - name: Package macOS binary
+      - name: Package binary
         run: |
-          tar -czf localSRT-macos-x64.tar.gz -C dist localSRT-macos
+          tar -czf localSRT-macos-arm64.tar.gz -C dist localSRT-macos-arm64
 
-      - name: Upload localSRT macOS to Release
+      - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          files: localSRT-macos-x64.tar.gz
+          files: localSRT-macos-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GTH_TOKEN }}
