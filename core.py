@@ -6,7 +6,6 @@ import shutil
 from faster_whisper import WhisperModel
 from ffmpeg_binary_manager import get_ffmpeg_binary
 import math
-from shared import broadcast, broadcast_sync
 
 FFMPEG = get_ffmpeg_binary("ffmpeg")
 FFPROBE = get_ffmpeg_binary("ffprobe")
@@ -59,20 +58,21 @@ def load_model(size):
             "model": WhisperModel(size, device="cpu", compute_type="int8")
         }
     return WHISPER_CACHE["model"]
+    
 
+def process_srt_job(selected_path, chunk_length, model_size, progress, progress_callback=None):
 
-def process_srt_job(selected_path, chunk_length, model_size, progress, event_loop, clients_lock, clients):
     audio_file = os.path.join(tempfile.gettempdir(), "localsrt_audio.wav")
     chunks_dir = os.path.join(tempfile.gettempdir(), "localsrt_chunks")
     output_srt = os.path.splitext(selected_path)[0] + ".srt"
     filename = os.path.basename(selected_path)
 
     if os.path.exists(output_srt):
-        print(f"[SKIP] SRT already exists: {output_srt}")
-        progress['status'] = f"Skipping {filename} as SRT already exists"
-        broadcast_sync(event_loop, progress,clients_lock,clients)
+        progress["status"] = f"Skipping {filename} (SRT exists)"
+        if progress_callback:
+            progress_callback(progress.copy())
         return output_srt
-    
+
     if os.path.exists(chunks_dir):
         shutil.rmtree(chunks_dir)
 
@@ -81,7 +81,7 @@ def process_srt_job(selected_path, chunk_length, model_size, progress, event_loo
     extract_audio(selected_path, audio_file)
 
     duration = get_duration(audio_file)
-    step = chunk_length - OVERLAP
+    step = max(1, chunk_length - OVERLAP)
     num_chunks = math.ceil(duration / step)
 
     model = load_model(model_size)
@@ -91,9 +91,9 @@ def process_srt_job(selected_path, chunk_length, model_size, progress, event_loo
     with open(output_srt, "w", encoding="utf-8") as f:
 
         for i in range(num_chunks):
-            start = i * step
 
-            chunk = os.path.join(chunks_dir, f"c{i}.wav")
+            start = i * step
+            chunk_path = os.path.join(chunks_dir, f"c{i}.wav")
 
             subprocess.run([
                 FFMPEG, "-y",
@@ -102,10 +102,10 @@ def process_srt_job(selected_path, chunk_length, model_size, progress, event_loo
                 "-t", str(chunk_length),
                 "-ac", "1",
                 "-ar", str(SAMPLE_RATE),
-                chunk
-            ], check=True)
+                chunk_path
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-            segments, info = model.transcribe(chunk)
+            segments, info = model.transcribe(chunk_path)
 
             for seg in segments:
                 f.write(f"{index}\n")
@@ -116,69 +116,72 @@ def process_srt_job(selected_path, chunk_length, model_size, progress, event_loo
                 f.write(seg.text.strip() + "\n\n")
                 index += 1
 
-            progress['current'] = i + 1
-            progress['total'] = num_chunks
-            progress['status'] = f"Processing chunk {i+1}/{num_chunks} for file no {progress['current_file']+1}/{progress['total_files']}"
+            # ---------------- PROGRESS UPDATE
+            progress["current"] = i + 1
+            progress["total"] = num_chunks
+            progress["status"] = f"Chunk {i+1}/{num_chunks} - {filename}"
 
-            broadcast_sync(event_loop, progress,clients_lock,clients)
+            if progress_callback:
+                progress_callback(progress.copy())
 
-            os.remove(chunk)
+            os.remove(chunk_path)
 
     os.remove(audio_file)
 
+    progress["status"] = "Completed"
+    if progress_callback:
+        progress_callback(progress.copy())
+
     return output_srt
 
-def process_srt_job_with_progress(selected_path, chunk_length, model_size, progress, event_loop, clients_lock, clients):
-    is_folder = False
-    total_folder_files = []
-    if os.path.isdir(selected_path):
-        print("Directory detected")
-        is_folder = True
-        total_folder_files = [f for f in os.listdir(selected_path) if f.lower().endswith(tuple(ALLOWED_EXTENSIONS))]
-    if is_folder:
-        progress["total_files"] = len(total_folder_files)
-        for i, file in enumerate(total_folder_files):
-            if not file.lower().endswith(tuple(ALLOWED_EXTENSIONS)):
-                print(f"Skipping {file}")
-                continue
 
-            print(
-                f"Processing {file}. No {i+1} out of {len(total_folder_files)}"
-            )
+def process_srt_job_with_progress(selected_path, chunk_length, model_size, progress, progress_callback=None):
+
+    if os.path.isdir(selected_path):
+
+        files = [
+            f for f in os.listdir(selected_path)
+            if f.lower().endswith(tuple(ALLOWED_EXTENSIONS))
+        ]
+
+        progress["total_files"] = len(files)
+
+        for i, file in enumerate(files):
+
             progress["current_file"] = i + 1
+            progress["status"] = f"Processing {file}"
+
+            if progress_callback:
+                progress_callback(progress.copy())
+
             process_srt_job(
                 os.path.join(selected_path, file),
                 chunk_length,
                 model_size,
                 progress,
-                event_loop,
-                clients_lock,
-                clients
+                progress_callback
             )
+
     else:
         progress["total_files"] = 1
-        progress["current_file"] = 0
+        progress["current_file"] = 1
+
         process_srt_job(
             selected_path,
             chunk_length,
             model_size,
             progress,
-            event_loop,
-            clients_lock,
-            clients
+            progress_callback
         )
-        # manually set the number to 1
-        progress["current_file"] = 1
-
-    progress["current"] = 0
-    progress["total"] = 0
-    progress["status"] = "idle"
-    progress["total_files"] = 0
-    progress["current_file"] = 0
-
-
-    broadcast_sync(event_loop, progress,clients_lock,clients)
     
+    # reset
+    progress.update({
+        "current": 0,
+        "total": 0,
+        "status": "idle",
+        "total_files": 0,
+        "current_file": 0
+    })
 
-    
-
+    if progress_callback:
+        progress_callback(progress.copy())

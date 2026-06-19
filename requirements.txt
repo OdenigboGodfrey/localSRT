@@ -4,5 +4,4 @@ sounddevice
 numpy
 argostranslate
 pydantic
-fastapi
-uvicorn[standard]
+PyQt6

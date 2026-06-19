@@ -1,191 +1,231 @@
-import asyncio
-import time
-import os
-import signal
-import webbrowser
-import threading
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-import uvicorn
-import tkinter as tk
-from tkinter import filedialog
-from core import process_srt_job_with_progress
-from fastapi import WebSocket
-from contextlib import asynccontextmanager
-
-from shared import resource_path
-
-port = 3555
-event_loop = None
-
-# -----
-# Monitor web socket connections and auto kill the app when there's no active connection
-# -----
-last_seen = time.time()
+import sys
+from PyQt6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+    QPushButton, QLabel, QFileDialog, QComboBox, 
+    QProgressBar, QSpinBox
+)
+from PyQt6.QtCore import Qt
+from shared import APP_NAME
+from worker import Worker
 
 
-def monitor():
-    while True:
-        time.sleep(5)
-        if active_connections == 0 and (time.time() - last_seen >= 5):
-            print("No browser for 5s. Shutting down.")
-            os.kill(os.getpid(), signal.SIGTERM)
+# -----------------------
+# UI MAIN WINDOW
+# -----------------------
+class App(QWidget):
+    def __init__(self):
+        super().__init__()
 
+        self.setWindowTitle(APP_NAME)
+        self.resize(550, 600)
+        self.setMinimumSize(450, 450)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global event_loop
-    event_loop = asyncio.get_running_loop()
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f8f9fa;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                font-size: 13px;
+                color: #333333;
+            }
+            QLabel {
+                color: #495057;
+            }
+            QPushButton {
+                background-color: #0d6efd;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 5px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #0b5ed7;
+            }
+            QPushButton:pressed {
+                background-color: #0a58ca;
+            }
+            QSpinBox, QComboBox {
+                background-color: white;
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                padding: 5px;
+                min-height: 25px;
+            }
+            QSpinBox:focus, QComboBox:focus {
+                border: 1px solid #86b7fe;
+            }
+            QProgressBar {
+                border: 1px solid #ced4da;
+                border-radius: 5px;
+                text-align: center;
+                background-color: #e9ecef;
+                height: 20px;
+            }
+            QProgressBar::chunk {
+                background-color: #198754;
+                border-radius: 4px;
+            }
+        """)
 
-    monitor_thread = threading.Thread(
-        target=monitor,
-        daemon=True
-    )
-    monitor_thread.start()
+        layout = QVBoxLayout()
+        layout.setSpacing(15)
+        layout.setContentsMargins(20, 20, 20, 20)
 
-    print("Server starting...")
+        # --- AI Disclaimer Box ---
+        disclaimer_text = (
+            "⚠️ <b>Notice:</b> Because this application uses AI to generate subtitles, "
+            "occasional inaccuracies or omissions may occur.<br>"
+            "Larger models generally provide better accuracy but take longer to process."
+        )
+        self.disclaimer_label = QLabel(disclaimer_text)
+        self.disclaimer_label.setWordWrap(True)
+        self.disclaimer_label.setStyleSheet("""
+            QLabel {
+                background-color: #fff3cd;
+                color: #664d03;
+                border: 1px solid #ffecb5;
+                border-radius: 6px;
+                padding: 12px;
+                font-size: 12px;
+            }
+        """)
+        layout.addWidget(self.disclaimer_label)
 
-    yield
+        # --- File Status Label ---
+        self.label = QLabel("No file or folder selected")
+        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setWordWrap(True)
+        self.label.setStyleSheet("""
+            QLabel {
+                background-color: #e9ecef;
+                border: 1px dashed #adb5bd;
+                border-radius: 6px;
+                padding: 15px;
+                font-weight: 500;
+                color: #495057;
+            }
+        """)
+        layout.addWidget(self.label)
 
-    print("Server shutting down...")
+        # --- File Selection Buttons (Horizontal) ---
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(10)
+        
+        self.btn_file = QPushButton("📁 Select File")
+        self.btn_file.clicked.connect(self.select_file)
+        btn_layout.addWidget(self.btn_file)
 
+        self.btn_folder = QPushButton("📂 Select Folder")
+        self.btn_folder.clicked.connect(self.select_folder)
+        btn_layout.addWidget(self.btn_folder)
+        
+        layout.addLayout(btn_layout)
 
-app = FastAPI(lifespan=lifespan)
-clients = set()
-clients_lock = asyncio.Lock()
+        # --- Divider Line ---
+        line = QLabel()
+        line.setStyleSheet("background-color: #dee2e6; max-height: 1px;")
+        layout.addWidget(line)
 
-progress_store = {
-    "current": 0,
-    "total": 1,
-    "status": "idle",
-    "total_files": 0,
-    "current_file": 0
-}
+        # --- Settings: Chunk Size ---
+        chunk_label = QLabel("Chunk Size (seconds)")
+        chunk_label.setStyleSheet("font-weight: bold;")
+        layout.addWidget(chunk_label)
+        
+        chunk_help = QLabel("Larger chunks take longer to process and use more memory.")
+        chunk_help.setStyleSheet("color: #6c757d; font-size: 11px; font-style: italic;")
+        layout.addWidget(chunk_help)
 
-# -----------------------------
-# UI
-# -----------------------------
-@app.get("/")
-def home():
-    with open(
-        resource_path("ui/index.html"),
-        "r",
-        encoding="utf-8"
-    ) as f:
-        return HTMLResponse(f.read())
+        self.chunk = QSpinBox()
+        self.chunk.setRange(1, 1000)
+        self.chunk.setValue(30)
+        layout.addWidget(self.chunk)
 
+        # --- Settings: Model Selection ---
+        model_label = QLabel("AI Model Size")
+        model_label.setStyleSheet("font-weight: bold;")
+        layout.addWidget(model_label)
+        
+        model_help = QLabel("Changing models will trigger a download if it's not cached locally.")
+        model_help.setStyleSheet("color: #6c757d; font-size: 11px; font-style: italic;")
+        layout.addWidget(model_help)
 
-# -----------------------------
-# File picker
-# -----------------------------
-@app.get("/select-file")
-def select_file():
-    root = tk.Tk()
-    root.withdraw()
-    root.attributes("-topmost", True)
+        self.model = QComboBox()
+        self.model.addItems(["tiny", "base", "medium", "large"])
+        self.model.setCurrentIndex(1)
+        layout.addWidget(self.model)
 
-    path = filedialog.askopenfilename(
-        title="Select Video File",
-        filetypes=[
-            ("Video Files", "*.mp4 *.mkv *.avi *.mov")
-        ]
-    )
+        # --- Space Filler ---
+        layout.addStretch()
 
-    root.destroy()
+        # --- Execution Controls ---
+        self.start_btn = QPushButton("🚀 Start Processing")
+        self.start_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #198754;
+                font-size: 14px;
+                padding: 10px;
+            }
+            QPushButton:hover { background-color: #157347; }
+            QPushButton:pressed { background-color: #146c43; }
+        """)
+        self.start_btn.clicked.connect(self.start)
+        layout.addWidget(self.start_btn)
 
-    return {"path": path}
+        self.progress = QProgressBar()
+        self.progress.setValue(0)
+        layout.addWidget(self.progress)
 
+        self.setLayout(layout)
 
-# -----------------------------
-# Folder picker
-# -----------------------------
-@app.get("/select-folder")
-def select_folder():
-    root = tk.Tk()
-    root.withdraw()
-    root.attributes("-topmost", True)
+        self.path = None
+        self.worker = None
 
-    path = filedialog.askdirectory(title="Select Folder")
+    def select_file(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Video",
+            "",
+            "Videos (*.mp4 *.mkv *.avi *.mov)"
+        )
+        if file_path:
+            self.path = file_path
+            self.label.setText(f"📄 Selected File:\n{file_path}")
 
-    root.destroy()
+    def select_folder(self):
+        folder_path = QFileDialog.getExistingDirectory(self, "Select Folder")
+        if folder_path:
+            self.path = folder_path
+            self.label.setText(f"📁 Selected Folder:\n{folder_path}")
 
-    return {"path": path}
+    def start(self):
+        if not self.path:
+            self.label.setText("⚠️ Please select a file or folder first!")
+            return
 
-
-# -----------------------------
-# Run job
-# -----------------------------
-class JobRequest(BaseModel):
-    path: str
-    chunk_length: int
-    model_size: str
-
-
-@app.post("/run")
-def run_job(req: JobRequest):
-    if progress_store["status"] != "idle":
-        raise HTTPException(status_code=400, detail="Job already running")
-
-    def worker():
-        process_srt_job_with_progress(
-            req.path,
-            req.chunk_length,
-            req.model_size,
-            progress_store,
-            event_loop,
-            clients_lock,
-            clients
+        self.worker = Worker(
+            self.path,
+            int(self.chunk.value()),
+            self.model.currentText()
         )
 
-    progress_store["status"] = "running"
+        self.worker.progress.connect(self.update_progress)
+        self.worker.start()
 
-    threading.Thread(target=worker).start()
-
-    return {"status": "started"}
-
-@app.get("/progress")
-def get_progress():
-    return progress_store
-
-# -----------------------------
-# Websocket
-# -----------------------------
-active_connections = 0
-@app.websocket("/ws")
-async def ws_endpoint(websocket: WebSocket):
-    global active_connections, last_seen
-
-    await websocket.accept()
-    active_connections += 1
-    last_seen = time.time()
-
-    async with clients_lock:
-        clients.add(websocket)
-
-    try:
-        while True:
-            # keep connection alive
-            await websocket.receive_text()
-            last_seen = time.time()
-    except Exception as e:
-        # print(f"[WS exception caught] {e}")
-        pass
-    finally:
-        async with clients_lock:
-            clients.remove(websocket)
-            active_connections -= 1
-            last_seen = time.time()
+    def update_progress(self, data):
+        current = data.get("current", 0)
+        total = data.get("total", 1) or 1
+        percent = int((current / total) * 100)
+        self.progress.setValue(percent)
+        current_status = data.get("status", "")
+        if current_status.lower() != "idle".lower():
+            self.label.setText(data.get("status", ""))
 
 
-
-
-# -----------------------------
-# Auto open browser
-# -----------------------------
-def open_browser():
-    webbrowser.open(f"http://127.0.0.1:{port}")
-
+# -----------------------
+# RUN APP
+# -----------------------
 if __name__ == "__main__":
-    threading.Timer(1.5, open_browser).start() 
-    uvicorn.run(app, host="127.0.0.1", port=port)
+    app = QApplication(sys.argv)
+    window = App()
+    window.show()
+    sys.exit(app.exec())

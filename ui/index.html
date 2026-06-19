@@ -4,76 +4,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>LocalSRT</title>
 
     <style>
-        /* -------------------------
-   THEME SYSTEM
---------------------------*/
         :root {
-            --bg: #f5f5f5;
+            --bg: #f4f4f5;
             --card: #ffffff;
-            --text: #111;
-            --accent: #4f46e5;
             --border: #ddd;
+            --text: #111827;
+            --accent: #6366f1;
         }
 
-        /* automatically switch to dark mode */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg: #0f172a;
                 --card: #111827;
+                --border: #1f2937;
                 --text: #e5e7eb;
                 --accent: #6366f1;
-                --border: #1f2937;
             }
         }
 
-        /* -------------------------
-   LAYOUT
---------------------------*/
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             font-family: Arial, sans-serif;
             background: var(--bg);
             color: var(--text);
 
+            min-height: 100vh;
+
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+
+            padding: 20px;
         }
 
-        /* -------------------------
-   CARD
---------------------------*/
         .container {
             width: 100%;
-            max-width: 420px;
-            background: var(--card);
-            padding: 24px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
+            max-width: 500px;
 
+            background: var(--card);
+
+            border: 1px solid var(--border);
+            border-radius: 16px;
+
+            padding: 24px;
+
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+        }
 
         h2 {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         button,
         input,
         select {
             width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 8px;
+            padding: 12px;
+            border-radius: 10px;
             border: 1px solid var(--border);
             background: transparent;
             color: var(--text);
+            margin-top: 10px;
         }
 
         button {
@@ -85,7 +84,28 @@
         }
 
         button:hover {
-            opacity: 0.9;
+            opacity: .9;
+        }
+
+        .form-input-detail {
+            font-size: 12px;
+            opacity: .8;
+        }
+
+        .progress {
+            width: 100%;
+            height: 10px;
+            background: var(--border);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .bar {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            transition: width .2s;
         }
 
         #status {
@@ -93,44 +113,30 @@
             text-align: center;
         }
 
-        /* progress bar */
-        .progress {
-            width: 100%;
-            height: 8px;
-            background: var(--border);
-            border-radius: 10px;
-            margin-top: 15px;
-            overflow: hidden;
+        #selectedPath {
+            margin-top: 10px;
+            font-size: 13px;
+            word-break: break-word;
         }
 
-        .bar {
-            height: 100%;
-            width: 0%;
-            background: var(--accent);
-            transition: width 0.2s;
-        }
-        .form-input-detail {
-            font-size: 12px;
-        }
         #disclaimer {
-            background-color: #fffbeb;
+            background: #fffbeb;
             border-left: 4px solid #f59e0b;
-            padding: 16px;
-            border-radius: 4px;
-            margin-top: 24px;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
             display: none;
         }
+
         .disclaimer-title {
-            font-weight: 600;
+            font-weight: bold;
             color: #b45309;
-            margin-bottom: 4px;
-            font-size: 14px;
         }
+
         .disclaimer-text {
-            margin: 0;
+            color: #78350f;
             font-size: 13px;
             line-height: 1.5;
-            color: #78350f;
         }
     </style>
 </head>
@@ -141,28 +147,59 @@
 
         <h2>LocalSRT</h2>
 
-        <button onclick="selectFile()">Select File</button>
-        <p style="text-align: center">Or</p>
-        <button onclick="selectFolder()">Select Folder</button>
-        <p id="filePath">No file selected</p>
+        <label>Select Video</label>
+        <input id="videoInput" type="file" accept=".mp4,.mkv,.avi,.mov">
 
-        <p>Video Chunk Length in seconds <span class="form-input-detail">(This is how many seconds to transcribe in a batch. Longer lengths will take more memory)</span></p>
-        <input type="number" id="chunk" value="30">
+        <p style="text-align:center">
+            OR
+        </p>
 
-        <label>Model <span class="form-input-detail">(Changing this would trigger a model download which can take some time)</span></label>
+        <label>Select Folder</label>
+        <input id="folderInput" type="file" webkitdirectory multiple>
+
+        <div id="selectedPath">
+            Nothing selected
+        </div>
+
+        <br>
+
+        <p>
+            Video Chunk Length
+            <span class="form-input-detail">
+                (Longer chunks use more memory)
+            </span>
+        </p>
+
+        <input id="chunk" type="number" value="30">
+
+        <p>
+            Whisper Model
+            <span class="form-input-detail">
+                (Changing models may download them first)
+            </span>
+        </p>
+
         <select id="model">
             <option value="tiny">tiny</option>
             <option value="base" selected>base</option>
             <option value="medium">medium</option>
             <option value="large">large</option>
         </select>
+
         <div id="disclaimer">
-            <div class="disclaimer-title">⚠️ Important Disclaimer</div>
+            <div class="disclaimer-title">
+                ⚠ Important Disclaimer
+            </div>
+
             <p class="disclaimer-text">
-                Because this application relies on artificial intelligence to generate the subtitle(s), errors, omissions, or inaccuracies can occasionally occur. If you need more accuracy, you can try to use a different model (medium or large, transcription would also take more time).</p>
+                Because this application uses AI to generate subtitles, occasional inaccuracies or omissions may occur.
+                Larger models generally provide better accuracy but take longer.
+            </p>
         </div>
 
-        <button onclick="run()">Start</button>
+        <button onclick="run()">
+            Start
+        </button>
 
         <div class="progress">
             <div class="bar" id="bar"></div>
@@ -173,98 +210,59 @@
     </div>
 
     <script>
-        const API_URL = "http://127.0.0.1:3555";
-        const WEBSOCKET_URL = "ws://127.0.0.1:3555/ws";
 
-        let selectedPath = ""
-        let totalChunks = 1
+        let selectedPath = "";
 
+        // FILE PICKER
         async function selectFile() {
-            const res = await fetch("/select-file")
-            const data = await res.json()
+            const path = await window.pywebview.api.select_file();
+            if (!path) return;
 
-            if (!data.path) return
-
-            selectedPath = data.path
-
-            document.getElementById("filePath").innerText =
-                "Selected: " + selectedPath
+            selectedPath = path;
+            document.getElementById("selectedPath").innerText = path;
         }
 
+        // FOLDER PICKER
         async function selectFolder() {
-            const res = await fetch("/select-folder")
-            const data = await res.json()
+            const path = await window.pywebview.api.select_folder();
+            if (!path) return;
 
-            if (!data.path) return
-
-            selectedPath = data.path
-
-            document.getElementById("filePath").innerText =
-                "Selected: " + selectedPath
+            selectedPath = path;
+            document.getElementById("selectedPath").innerText = path;
         }
 
-        /* -------------------------
-           RUN JOB
-        --------------------------*/
+        // RUN JOB
         async function run() {
 
             if (!selectedPath) {
-                alert("Select a file first")
-                return
+                alert("Select file or folder first");
+                return;
             }
 
-            document.getElementById("status").innerText =
-                "Starting..."
-            document.getElementById("disclaimer").style.display = "block"
+            document.getElementById("disclaimer").style.display = "block";
+            document.getElementById("status").innerText = "Starting...";
 
-            const res = await fetch(`${API_URL}/run`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    path: selectedPath,
-                    chunk_length: parseInt(document.getElementById("chunk").value),
-                    model_size: document.getElementById("model").value
-                })
-            })
+            await window.pywebview.api.run({
+                path: selectedPath,
+                chunk_length: parseInt(document.getElementById("chunk").value),
+                model_size: document.getElementById("model").value
+            });
 
-            const data = await res.json()
-            if (data.output) {
-                document.getElementById("status").innerText =
-                "Done: " + data.output
-            }
-        }
+            // poll progress
+            setInterval(async () => {
+                const data = await window.pywebview.api.progress();
 
-        const ws = new WebSocket(`${WEBSOCKET_URL}`)
+                const percent = (data.current / data.total) * 100;
+                document.getElementById("bar").style.width = percent + "%";
 
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data)
+                document.getElementById("status").innerText = data.status;
 
-            const totalFiles = data.total_files
-            const currentFile = data.current_file
-
-            const percent =
-                (data.current / data.total) * 100
-
-            document.getElementById("bar").style.width =
-                percent + "%";
-            
-            if (percent == 100) {
-                let message = "Completed. SRT file saved to the same directory as the video."
-                if (currentFile <= totalFiles) {
-                    message = `${(currentFile + 1)}/${totalFiles} files processed. SRT file saved to the same directory as the video.`
+                if (percent >= 100) {
+                    document.getElementById("status").innerText =
+                        "Completed: SRT generated";
                 }
-                document.getElementById("status").innerText = message
-                
-            }
-            else {
-            document.getElementById("status").innerText = data.status;
-            }
 
-            if (currentFile >= totalFiles) {
-                setTimeout(()=> {
-                    document.getElementById("disclaimer").style.display = "none"
-                }, 2000);
-            }
+            }, 1000);
         }
 
     </script>
