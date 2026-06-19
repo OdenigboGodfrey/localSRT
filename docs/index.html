@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>LocalSRT - Free Local AI Subtitle Generator</title>
+    <meta name="description" content="LocalSRT is a secure, private, and local desktop application that uses AI to generate subtitles and SRT files for your videos completely offline.">
+    <meta name="keywords" content="LocalSRT, AI subtitle generator, offline transcription, SRT generator, video to subtitles, local whisper GUI, free subtitle maker">
+    <meta name="author" content="OdenigboGodfrey">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="LocalSRT - Free Local AI Subtitle Generator">
+    <meta property="og:description" content="Generate accurate video subtitles locally and privately using advanced AI models. No internet required.">
+    <meta property="og:url" content="https://odenigbogodfrey.github.io/localSRT/">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LocalSRT - Offline AI Subtitle Tool">
+    <meta name="twitter:description" content="Convert video to SRT files completely on your local machine using AI.">
+
+    <style>
+        :root {
+            --primary: #0d6efd;
+            --primary-hover: #0b5ed7;
+            --success: #198754;
+            --success-hover: #157347;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --text: #495057;
+            --warning-bg: #fff3cd;
+            --warning-border: #ffecb5;
+            --warning-text: #664d03;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: var(--text); 
+            max-width: 850px; 
+            margin: 0 auto; 
+            padding: 40px 20px; 
+            background: var(--light); 
+        }
+
+        header { 
+            text-align: center; 
+            padding: 60px 0 30px; 
+        }
+
+        h1 {
+            color: var(--dark);
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-bottom: 30px;
+        }
+
+        .btn { 
+            display: inline-block; 
+            background: var(--success); 
+            color: white; 
+            padding: 14px 28px; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background 0.2s ease, transform 0.1s ease;
+        }
+
+        .btn:hover { 
+            background: var(--success-hover); 
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .disclaimer { 
+            background: var(--warning-bg); 
+            color: var(--warning-text); 
+            border: 1px solid var(--warning-border); 
+            padding: 18px; 
+            border-radius: 8px; 
+            margin: 30px 0; 
+            font-size: 0.95rem;
+        }
+
+        section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            color: var(--dark);
+            border-bottom: 2px solid var(--light);
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        pre { 
+            background: var(--dark); 
+            color: #f8f9fa;
+            padding: 15px; 
+            border-radius: 6px; 
+            overflow-x: auto;
+        }
+
+        code { 
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎙️ LocalSRT</h1>
+        <p class="tagline">Automatic fully local AI subtitle generation for your local videos.</p>
+        <a href="https://github.com/OdenigboGodfrey/localSRT/releases" class="btn" target="_blank" rel="noopener">🚀 Download Latest Release</a>
+    </header>
+
+    <main>
+        <div class="disclaimer">
+            <strong>⚠️ Notice:</strong> Because this application uses AI to generate subtitles, occasional inaccuracies or omissions may occur. Larger models generally provide better accuracy but take longer to process.
+        </div>
+
+        <section id="features">
+            <h2>Key Features</h2>
+            <ul>
+                <li><strong>100% Local:</strong> Your videos never leave your machine. No internet connection is required after setup.</li>
+                <li><strong>Batch Automation:</strong> Easily select individual video files or process entire folders.</li>
+                <li><strong>Configurable Performance:</strong> Tweak chunk sizes to balance your system's memory usage and processing speed.</li>
+                <li><strong>Scalable AI Models:</strong> Choose between <em>Tiny, Base, Medium, or Large</em> transcription models based on your hardware capabilities.</li>
+            </ul>
+        </section>
+
+        <section id="installation">
+            <h2>Run from Source</h2>
+            <p>If you prefer to run LocalSRT directly using Python, clone the repository and install the required dependencies</p>
+            <p>Then execute your main application script to launch the elegant user interface.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>LocalSRT is open-source. Maintained by <a href="https://github.com/OdenigboGodfrey" target="_blank" rel="noopener">OdenigboGodfrey</a>.</p>
+    </footer>
+
+</body>
+</html>
