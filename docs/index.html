@@ -183,8 +183,12 @@
     </main>
 
     <footer>
+        <p>© <span id="year"></span> RealTimeSRT • Free Offline Speech-to-Text Subtitle Generator</p>
         <p>LocalSRT is open-source. Maintained by <a href="https://github.com/OdenigboGodfrey" target="_blank" rel="noopener">OdenigboGodfrey</a>.</p>
     </footer>
 
 </body>
 </html>
+<script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+</script>
